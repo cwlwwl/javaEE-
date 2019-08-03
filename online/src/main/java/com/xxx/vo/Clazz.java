@@ -1,7 +1,7 @@
 package com.xxx.vo;
 
 import java.util.Date;
-
+//’‚ «”–
 public class Clazz {
 	private int id;
 	private String name;
