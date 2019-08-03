@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js">
+		</script>
+		<script type="text/javascript">
+			var stu = localStorage.getItem("stu");
+			stu = JSON.parse(stu);
+			
+			$(document).ready(function() {
+				showStuInf();//显示学生的名字和学号
+				showExamination();//显示考试的名字和所有的考试题
+				countdown();//倒计时
+			});
+			
+			function countdown() {
+				var i= 10;//当位是秒
+				var intervalId = setInterval(function(){
+					if(i>=1) {
+						i--;
+						$("#countdownSpan").html(i); 
+					}else {
+						//提交试卷
+						//??????????
+						//关闭interval
+						clearInterval(intervalId); 
+					}
+				}, 1000)
+			}
+			
+			function showStuInf() {
+				var stuInf = stu.name+" "+stu.no;
+				$("#stuInfSpan").html(stuInf);
+			}
+			
+			//显示考试的名字和所有的考试题 
+			function showExamination() {
+				$.ajax({
+					type : "get",//请求的方式
+					url : "getCurrentExaminationByStuId.do",//请求的url
+					dataType : "text",//接收的数据类型声明
+					data : {
+						stuId: stu.id
+					}, 
+					success : function(examination) {
+						if(examination=="") {//当前学生的班级没有正在进行的考试
+						}else {
+							//显示考试的名字
+							examination = JSON.parse(examination);
+							$("#examinationNameSpan").html(examination.name);
+							
+							//隐藏examination的id和name在input中
+							$("#examinationId").val(examination.id);
+							$("#examinationName").val(examination.name);
+							$(".hiddenExaminationInf").css("display","none");
+							//显示所有的考试题
+							showAllSubject(examination.category,examination.subjectNum);							
+						}
+					},
+					error : function() {//当ajax请求失败回调
+						alert("ajax请求失败")
+					}
+				});
+			}
+			
+			//显示所有的考试题
+			function showAllSubject(category, subjectNum) {
+				$.ajax({
+					type : "get",//请求的方式
+					url : "getSubjectByCategoryIdAndNum.do",//请求的url
+					dataType : "text",//接收的数据类型声明
+					data : {
+						categoryIdes: category,
+						num:subjectNum
+					}, 
+					success : function(subjectList) {
+						if(subjectList=="") {//没有题
+							
+						}else {
+							subjectList = JSON.parse(subjectList);
+							var inf = "";
+							var answer = "" 
+							for(let i=0; i<subjectList.length; i++) {
+								var subject = subjectList[i];
+								answer += subject.answer
+								inf += "<p><hr/>第"+(i+1)+"道题"+subject.title
+									inf += "<ol type='A'>";
+										inf += "<li><input value='A' checked type='radio' name='"+subject.id+"'>"+subject.itema+"</li>";
+										inf += "<li><input value='B' type='radio' name='"+subject.id+"'>"+subject.itemb+"</li>";
+										inf += "<li><input value='C' type='radio' name='"+subject.id+"'>"+subject.itemc+"</li>";
+										inf += "<li><input value='D' type='radio' name='"+subject.id+"'>"+subject.itemd+"</li>";
+									inf += "</ol>";
+								inf += "</p>";
+							}
+							$("#answer").val(answer);
+							$("#subjectesDiv").html(inf);
+						}
+					},
+					error : function() {//当ajax请求失败回调
+						alert("ajax请求失败")
+					}
+				});
+			}
+		</script>
+		
+		<!-- 提交试卷 -->
+		<!--stu_id, examination_id, examination_name, score(得分), times-->
+		<script type="text/javascript">
+			function commitExamination() {
+				$("#commitBtn").css("display","none");
+				//取出学生提交的答案
+				var inputes = $("#subjectesDiv input:radio:checked");
+				var answer1 = "";//学生提交的答案
+				for (let i = 0; i < inputes.length; i++) {
+					var v = inputes[i].value;
+					answer1 += v;
+				}
+				//得到正确答安
+				var answer2 = $("#answer").val(); 
+				//做对了多少道题
+				var num = 0;
+				for(var i=0; i<answer1.length; i++) {
+					a1_c = answer1.charAt(i);
+					a2_c = answer2.charAt(i);
+					if(a1_c==a2_c) {
+						num++;
+					}
+				}
+				//计算得到的分数
+				var score = num*100/answer1.length
+				var stu_id = stu.id;
+				var examination_id = $("#examinationId").val();
+				var examination_name = $("#examinationName").val();
+				//stu_id, examination_id, examination_name, score(得分), times
+				//ajax提交把数据保存在grade表中
+				$.ajax({
+					type : "post",//请求的方式
+					url : "commitGrade.do",//请求的url
+					dataType : "text",//接收的数据类型声明
+					data : {
+						stuId:stu_id, 
+						examinationId:examination_id, 
+						examinationName:examination_name, 
+						score:score
+					}, 
+					success : function(msg) {
+						//显示分数
+						$("#scoreSpan").html(score);
+					},
+					error : function() {//当ajax请求失败回调
+						alert("ajax请求失败")
+					}
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<div>
+			<input class="hiddenExaminationInf" type="text" id="examinationId" />
+			<input class="hiddenExaminationInf" type="text" id="examinationName" />
+			<input class="hiddenExaminationInf" type="text" id="answer" />
+			<div>学生:<span id="stuInfSpan"></span>---科目:<span id="examinationNameSpan"></span> <span id="countdownSpan"></span><br >
+				<button>结束</button>
+				--------得分<span id="scoreSpan" style="color:red"></span>
+			</div>
+			<div id="subjectesDiv">
+				 <!-- 显示所有的考试题 -->
+			</div>
+			
+			
+			<div>
+				<hr/>
+				<button id="commitBtn" onclick="commitExamination()">提交试卷</button>
+			</div>
+		</div>
+	</body>
+	<script src="base.js" type="text/javascript" charset="utf-8"></script>
+	<style type="text/css">
+		body {
+			font-size: 2rem;
+			margin: 5rem;
+		}
+	</style>
+</html>
