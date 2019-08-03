@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS `record`;
+CREATE TABLE `record` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `mytinyblob` tinyblob,
+  `myblob` blob,
+  `mymediumblob` mediumblob,
+  `mylongblob` longblob,
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ 

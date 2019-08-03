@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxx.mapper.ClazzMapper">
+	<select id="selectAll" resultType="Clazz">
+		select id, name, major, begin_date  from clazz
+	</select>
+	<insert id="insertClazz">
+		insert into clazz(name, major, begin_date)values(#{name},#{major},#{beginDate})
+	</insert>
+	<insert id="deleteById">
+		delete from clazz where id=#{id}
+	</insert>
+	<select id="selectByIdNameMajor" resultType="Clazz">
+		select id, name, major, begin_date from clazz where 1=1
+		<if test="name!=null and name!=''">
+			and name like #{name}
+		</if>
+		<if test="major!=null and major!=''">
+			or major like #{major}
+		</if>
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
